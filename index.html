@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Weather</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/0.14.7/react.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/0.14.7/react-dom.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.23/browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/0.3.5/marked.min.js"></script>
+  </head>
+  <body>
+    <div id="weather"></div>
+    
+    <script type="text/babel">
+        var WeatherBox = React.createClass({
+            getInitialState: getInitialState, 
+            getPosition: getPosition,
+            getWeather: getWeather,
+            getIcon: getIcon,
+            componentDidMount: componentDidMount,
+            render: render
+        });
+        
+        ReactDOM.render(<WeatherBox/>, document.getElementById('weather'));
+        
+        function render() {
+            var weatherIcon;
+            
+            if(this.state.iconURL){
+                weatherIcon = <img src={this.state.iconURL}></img>;
+            }
+            
+            return (
+                <div className="weatherBox">
+                    <div>{this.state.weather.weather[0].description}</div>
+                    {weatherIcon}
+                </div>
+             );
+        }
+        
+        function getInitialState() {
+            return {weather: {weather:[0]}};
+        }        
+        
+        function getWeather(){
+            var deferred = $.Deferred();
+            
+            var api = "http://api.openweathermap.org/data/2.5/weather?q=";
+            var lat = "lat=" + this.state.coords.latitude;
+            var long = "&long=" + this.state.coords.longitude;
+            var units = "&units=metric";
+            var appid = "&APPID=574ce908a9f55c45a16a4b79065a454d";
+            $.getJSON(api + lat + long + units + appid, 
+                deferred.resolve,
+                deferred.reject
+            );
+            
+            return deferred.promise();
+        }
+         
+        function getPosition(options) {
+            var deferred = $.Deferred();
+
+            navigator.geolocation.getCurrentPosition(
+                deferred.resolve,
+                deferred.reject,
+                options);
+
+                return deferred.promise();
+        }
+        
+        function componentDidMount() {
+            $.when(
+                this.getPosition()
+                ).then(
+                    function(pos){this.state.coords = pos.coords;
+                    }.bind(this)
+                ).then(
+                    this.getWeather
+                ).then(
+                    function(data){
+                        this.setState({weather: data});
+                        console.log(data);
+                    }.bind(this)
+                ).then(
+                    this.getIcon
+                );
+        }
+        
+        function getIcon(){
+            var icon = this.state.weather.weather[0].icon;
+            var url = "http://openweathermap.org/img/w/" + icon + ".png";
+            
+            this.setState({iconURL: url});
+        }
+    </script>
+  </body>
+</html>
